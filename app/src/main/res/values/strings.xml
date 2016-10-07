@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Shop</string>
+    <string name="ma_welcome_to_shop">Welcome to shop!</string>
+    <string name="ma_shop_state">Shop state</string>
+    <string name="pli_product_name">Product name</string>
+    <string name="pli_product_number">Product number</string>
+    <string name="pli_product_availability">Product availability</string>
+    <string name="ma_shop_state_open">Shop state: Open</string>
+    <string name="ma_shop_state_close">Shop state: Close</string>
+    <string name="ma_close">close</string>
+    <string name="ma_open">open</string>
+    <string name="ma_queue">Queue:</string>
+    <string name="ma_begin_sale">begin sale</string>
+</resources>
