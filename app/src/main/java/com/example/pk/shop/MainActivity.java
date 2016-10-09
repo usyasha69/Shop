@@ -1,33 +1,35 @@
 package com.example.pk.shop;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
-import android.os.Handler;
 import android.support.v7.app.AppCompatActivity;
-import android.widget.ListView;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
 import android.widget.TextView;
 import android.widget.Toast;
 
 import java.util.ArrayList;
+import java.util.PriorityQueue;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import butterknife.OnClick;
 
 public class MainActivity extends AppCompatActivity {
-    @BindView(R.id.ma_product_list)
-    ListView productList;
+    @BindView(R.id.ma_product_recycler_view)
+    RecyclerView productList;
     @BindView(R.id.ma_shop_state)
     TextView shopState;
     @BindView(R.id.ma_queue)
-    TextView queue;
+    TextView queueLabel;
 
+    /**
+     * Objects for work with shop.
+     */
     private Shop shop;
+    private ShopManager shopManager;
 
-    private Handler mainHandler;
-    private Handler createQueueHandler;
-    private Handler toServeQueueHandler;
-
-    private ArrayList<Product> queueList;
+    private RecyclerViewAdapter recyclerViewAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -35,44 +37,47 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
         ButterKnife.bind(this);
 
+        shopManager = new ShopManager();
         createAndFillingShop();
-    }
-
-    /**
-     * This method create and filling shop.
-     */
-    private void createAndFillingShop() {
-        shop = new Shop();
-
-        ArrayList<Product> products = new ArrayList<>();
-        products.add(new Product("Chicken", 20));
-        products.add(new Product("Meat", 24));
-        products.add(new Product("Potatoes", 21));
-        products.add(new Product("Apple", 27));
-        products.add(new Product("Banana", 23));
-
-        shop.setProducts(products);
-        shop.setOpen(true);
-
-        shopState.setText(R.string.ma_shop_state_open);
-        productList.setAdapter(new ProductAdapter(this, products));
     }
 
     @Override
     protected void onPause() {
         super.onPause();
 
-        if (mainHandler != null) {
-            mainHandler.removeCallbacksAndMessages(null);
+        //offing saleAsyncTask if activity on paused
+        if (shopManager.getSaleAsyncTask() != null) {
+            if (shopManager.getSaleAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
+                shopManager.getSaleAsyncTask().cancel(true);
+            }
         }
 
-        if (toServeQueueHandler != null) {
-            toServeQueueHandler.removeCallbacksAndMessages(null);
+        //offing createQueueAsyncTask if activity on paused
+        if (shopManager.getCreateQueueAsyncTask() != null) {
+            if (shopManager.getCreateQueueAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
+                shopManager.getCreateQueueAsyncTask().cancel(true);
+            }
         }
 
-        if (createQueueHandler != null) {
-            createQueueHandler.removeCallbacksAndMessages(null);
+        //offing toServeQueueAsyncTask if activity on paused
+        if (shopManager.getToServeQueueAsyncTask() != null) {
+            if (shopManager.getToServeQueueAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
+                shopManager.getToServeQueueAsyncTask().cancel(true);
+            }
         }
+    }
+
+    /**
+     * This method create and filling shop.
+     */
+    public void createAndFillingShop() {
+        shop = shopManager.createAndFillingShop();
+
+        shopState.setText(R.string.ma_shop_state_open);
+
+        recyclerViewAdapter = new RecyclerViewAdapter(this, shop.getProducts());
+        productList.setLayoutManager(new LinearLayoutManager(this));
+        productList.setAdapter(recyclerViewAdapter);
     }
 
     @OnClick(R.id.ma_open)
@@ -80,10 +85,10 @@ public class MainActivity extends AppCompatActivity {
         shop.setOpen(true);
         shopState.setText(R.string.ma_shop_state_open);
 
-        if (queueListIsEmpty()) {
-            makeToast("Shop is open! Welcome!");
+        if (shopManager.isEmptyProductQueue()) {
+            makeToast(getString(R.string.toast_shop_is_open));
         } else {
-            makeToast("To serve queue!");
+            makeToast(getString(R.string.toast_to_serve_product_queue));
             toServeQueue();
         }
     }
@@ -93,9 +98,9 @@ public class MainActivity extends AppCompatActivity {
         shop.setOpen(false);
         shopState.setText(R.string.ma_shop_state_close);
 
-        makeToast("Shop is close!");
+        makeToast(getString(R.string.toast_shop_is_close));
 
-        if (!shop.isOpen() && mainHandler != null) {
+        if (!shop.isOpen()) {
             createQueue();
         }
     }
@@ -111,39 +116,57 @@ public class MainActivity extends AppCompatActivity {
      * This method served queue which met the during of close.
      */
     private void toServeQueue() {
-        toServeQueueHandler = new Handler();
+        shopManager.setToServeQueueAsyncTask(new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                final int PRODUCT_QUEUE_SIZE = shopManager.getProductQueue().size();
 
-        if (!queueList.isEmpty()) {
-            for (int i = queueList.size() - 1; i >= 0; i--) {
-                final int finalI = i;
+                for (int i = 0; i < PRODUCT_QUEUE_SIZE; i++) {
+                    if (isCancelled()) {
+                        break;
+                    }
 
-                toServeQueueHandler.postDelayed(new Runnable() {
-                    @Override
-                    public void run() {
+                    Product product;
+                    String name = "";
+                    int count = 0;
 
-                        String name = queueList.get(finalI).getName();
-                        int count = queueList.get(finalI).getCount();
+                    if (!shopManager.getProductQueue().isEmpty()) {
+                        product = shopManager.getProductQueue().poll();
+                        name = product.getName();
+                        count = product.getCount();
+                    }
 
-                        for (int j = 0; j < shop.getProducts().size(); j++) {
-                            if (shop.getProducts().get(j).getName().equals(name)) {
+                    for (int j = 0; j < shop.getProducts().size(); j++) {
+                        if (shop.getProducts().get(j).getName().equals(name)) {
 
-                                shop.getProducts().get(j)
-                                        .setCount(shop.getProducts().get(j).getCount() - count);
-                                break;
-                            }
-                        }
-
-                        deleteTextFromQueue();
-
-                        productList.setAdapter(new ProductAdapter(
-                                MainActivity.this, shop.getProducts()));
-
-                        if (finalI == 0) {
-                            queueList.clear();
+                            shop.getProducts().get(j)
+                                    .setCount(shop.getProducts().get(j).getCount() - count);
+                            break;
                         }
                     }
-                }, (80 * (queueList.size() - finalI)));
+
+                    publishProgress();
+
+                    try {
+                        Thread.sleep(80);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+                }
+                return null;
             }
+
+            @Override
+            protected void onProgressUpdate(Void... values) {
+                super.onProgressUpdate(values);
+
+                updateQueueLabel();
+                recyclerViewAdapter.notifyDataSetChanged();
+            }
+        });
+
+        if (!shopManager.getProductQueue().isEmpty()) {
+            shopManager.getToServeQueueAsyncTask().execute();
         }
     }
 
@@ -151,19 +174,15 @@ public class MainActivity extends AppCompatActivity {
      * This method start sale in shop.
      */
     private void beginSale() {
-        //if handler != null remove callbacks
-        if (mainHandler != null) {
-            mainHandler.removeCallbacksAndMessages(null);
-        }
+        shopManager.setSaleAsyncTask(new AsyncTask<Void, Void, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                while (true) {
+                    if (isCancelled()) {
+                        break;
+                    }
 
-        mainHandler = new Handler();
-
-        if (queueListIsEmpty()) {
-            makeToast("Begin sale!");
-            mainHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (shop.isOpen() && !productsIsEmpty()) {
+                    if (shop.isOpen() && !isEmptyProducts()) {
                         int randomProduct = (int) (Math.random() * shop.getProducts().size());
 
                         if (shop.getProducts().get(randomProduct).getCount() > 0) {
@@ -171,61 +190,106 @@ public class MainActivity extends AppCompatActivity {
                                     shop.getProducts().get(randomProduct).getCount() - 1);
                         }
 
-                        productList.setAdapter(new ProductAdapter(
-                                MainActivity.this, shop.getProducts()));
-                        mainHandler.postDelayed(this, 80);
+                        publishProgress();
+                    } else {
+                        break;
                     }
+
+                    try {
+                        Thread.sleep(80);
+                    } catch (InterruptedException e) {
+                        e.printStackTrace();
+                    }
+
                 }
-            });
+                return null;
+            }
+
+            @Override
+            protected void onProgressUpdate(Void... values) {
+                super.onProgressUpdate(values);
+
+                recyclerViewAdapter.notifyDataSetChanged();
+            }
+        });
+
+        //if saleAsyncTask is running, cancel
+        if (shopManager.getSaleAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
+            shopManager.getSaleAsyncTask().cancel(true);
+        }
+
+        if (shopManager.isEmptyProductQueue()) {
+            makeToast("Begin sale!");
+            shopManager.getSaleAsyncTask().execute();
         }
     }
 
     /**
-     * This method create queue with products, which will be serviced.
+     * This method create queueLabel with products, which will be serviced.
      */
     private void createQueue() {
-        createQueueHandler = new Handler();
-
-        if (queueList == null) {
-            queueList = new ArrayList<>();
+        if (shopManager.getProductQueue() == null) {
+            shopManager.setProductQueue(new PriorityQueue<Product>());
         }
 
-        if (queueList.size() == 0) {
-            makeToast("Create queue!");
-            createQueueHandler.post(new Runnable() {
-                @Override
-                public void run() {
-                    if (!productsIsEmpty() && !shop.isOpen()) {
+        shopManager.setCreateQueueAsyncTask(new AsyncTask<Void, Product, Void>() {
+            @Override
+            protected Void doInBackground(Void... voids) {
+                while (true) {
+                    if (isCancelled()) {
+                        break;
+                    }
+
+                    if (!isEmptyProducts() && !shop.isOpen()) {
                         int randomProduct = (int) (Math.random() * shop.getProducts().size());
                         Product product = null;
 
-                        if (checkProductNumber(shop.getProducts().get(randomProduct).getName())
+                        if (shopManager.checkProductsNumber(shop.getProducts().get(randomProduct).getName())
                                 < shop.getProducts().get(randomProduct).getCount()) {
                             product = new Product();
                             product.setName(shop.getProducts().get(randomProduct).getName());
                             product.setCount(1);
-                            queueList.add(product);
+                            shopManager.getProductQueue().add(product);
                         }
 
-                        String textQueue = queue.getText().toString();
+                        publishProgress(product);
 
-                        if (product != null) {
-                            queue.setText(textQueue + " \"" + product.getName() + "" + product.getCount() + "\"");
+                        try {
+                            Thread.sleep(80);
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
                         }
-
-                        mainHandler.postDelayed(this, 80);
+                    } else {
+                        break;
                     }
                 }
-            });
-        }
+
+                return null;
+            }
+
+            @Override
+            protected void onProgressUpdate(Product... products) {
+                super.onProgressUpdate(products);
+
+                String textQueue = queueLabel.getText().toString();
+
+                if (products[0] != null) {
+                    queueLabel.setText(textQueue + " \"" + products[0].getName()
+                            + "" + products[0].getCount() + "\"");
+                }
+            }
+        });
+
+        makeToast("Create queue!");
+        shopManager.getCreateQueueAsyncTask().execute();
     }
 
     /**
-     * This method checked whether there is a products im shop.
+     * This method checked whether there is a products in shop.
      *
      * @return - isThere
      */
-    private boolean productsIsEmpty() {
+    private boolean isEmptyProducts() {
         boolean result = false;
         int count = 0;
 
@@ -236,71 +300,20 @@ public class MainActivity extends AppCompatActivity {
         if (count == 0) {
             result = true;
 
-            makeToast("Product ending!");
-
             shop.setOpen(false);
-
-            shopState.setText(R.string.ma_shop_state_close);
         }
 
         return result;
     }
 
     /**
-     * This method delete last product in queue.
+     * This method update queue label.
      */
-    private void deleteTextFromQueue() {
-        String[] queueToArray = queue.getText().toString().split(" ");
-
-        String result = "";
-
-        for (int i = 0; i < queueToArray.length - 1; i++) {
-            if (i == queueToArray.length - 1) {
-                result += queueToArray[i];
-            } else {
-                result += queueToArray[i] + " ";
-            }
-        }
-
-        queue.setText(result);
+    private void updateQueueLabel() {
+        queueLabel.setText(shopManager.deleteTextFromQueueLabel(queueLabel.getText().toString()));
     }
 
     private void makeToast(String text) {
         Toast.makeText(this, text, Toast.LENGTH_SHORT).show();
-    }
-
-    /**
-     * This method checked queue list is empty.
-     *
-     * @return - is empty
-     */
-    private boolean queueListIsEmpty() {
-        boolean result = true;
-
-        if (queueList != null) {
-            if (queueList.size() != 0) {
-                result = false;
-            }
-        }
-
-        return result;
-    }
-
-    /**
-     * This method calculate number of specified product in queue list.
-     *
-     * @param name - name of product
-     * @return - number of products
-     */
-    private int checkProductNumber(String name) {
-        int count = 0;
-
-        for (int i = 0; i < queueList.size(); i++) {
-            if (queueList.get(i).getName().equals(name)) {
-                count++;
-            }
-        }
-
-        return count;
     }
 }

@@ -1,6 +1,8 @@
 package com.example.pk.shop;
 
-public class Product {
+import android.support.annotation.NonNull;
+
+public class Product implements Comparable<Product> {
     private String name;
     private int count;
 
@@ -54,5 +56,15 @@ public class Product {
                 "name='" + name + '\'' +
                 ", count='" + count + '\'' +
                 '}';
+    }
+
+    @Override
+    public int compareTo(@NonNull Product product) {
+        int result = product.getName().compareTo(name);
+
+        if (result == 0) {
+            result = product.getCount() - count;
+        }
+        return result;
     }
 }

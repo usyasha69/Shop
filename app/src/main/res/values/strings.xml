@@ -11,4 +11,7 @@
     <string name="ma_open">open</string>
     <string name="ma_queue">Queue:</string>
     <string name="ma_begin_sale">begin sale</string>
+    <string name="toast_shop_is_open">Shop is open! Welcome!</string>
+    <string name="toast_to_serve_product_queue">To serve product queue!</string>
+    <string name="toast_shop_is_close">Shop is close!</string>
 </resources>
