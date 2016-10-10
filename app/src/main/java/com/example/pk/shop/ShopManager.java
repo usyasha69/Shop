@@ -1,14 +1,13 @@
 package com.example.pk.shop;
 
 import android.os.AsyncTask;
-import android.support.v7.widget.LinearLayoutManager;
 
 import java.util.ArrayList;
 import java.util.PriorityQueue;
 
 public class ShopManager {
     /**
-     * Async task for imitation shop work.
+     * Async task for working shop in background.
      */
     private AsyncTask<Void, Void, Void> saleAsyncTask;
     private AsyncTask<Void, Product, Void> createQueueAsyncTask;
@@ -54,7 +53,7 @@ public class ShopManager {
     /**
      * This method calculate number of specified product in product queue.
      *
-     * @param name         - name of product
+     * @param name - name of product
      * @return - number of products
      */
     public int checkProductsNumber(String name) {
@@ -122,5 +121,63 @@ public class ShopManager {
         shop.setOpen(true);
 
         return shop;
+    }
+
+    /**
+     * This method cancel sale async task if he running.
+     */
+    public void cancelSaleAsyncTasks() {
+        //offing saleAsyncTask
+        if (saleAsyncTask != null) {
+            if (saleAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+                saleAsyncTask.cancel(true);
+            }
+        }
+    }
+
+    /**
+     * This method cancel create queue async task if he running.
+     */
+    public void cancelCreateQueueAsyncTasks() {
+        //offing createQueueAsyncTask
+        if (createQueueAsyncTask != null) {
+            if (createQueueAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+                createQueueAsyncTask.cancel(true);
+            }
+        }
+    }
+
+    /**
+     * This method cancel to serve queue async task if he running.
+     */
+    public void cancelToServeQueueAsyncTasks() {
+        //offing toServeQueueAsyncTask
+        if (toServeQueueAsyncTask != null) {
+            if (toServeQueueAsyncTask.getStatus() == AsyncTask.Status.RUNNING) {
+                toServeQueueAsyncTask.cancel(true);
+            }
+        }
+    }
+
+    /**
+     * This method checked whether there is a products in shop.
+     *
+     * @return - is empty
+     */
+    public boolean isEmptyProducts(Shop shop) {
+        boolean result = false;
+        int count = 0;
+
+        for (int i = 0; i < shop.getProducts().size(); i++) {
+            count += shop.getProducts().get(i).getCount();
+        }
+
+        if (count == 0) {
+            result = true;
+
+            shop.setOpen(false);
+        }
+
+        return result;
     }
 }

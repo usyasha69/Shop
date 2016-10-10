@@ -1,6 +1,5 @@
 package com.example.pk.shop;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -20,14 +19,17 @@ public class MainActivity extends AppCompatActivity {
     @BindView(R.id.ma_shop_state)
     TextView shopState;
     @BindView(R.id.ma_queue)
-    TextView queueLabel;
+    TextView queueReport;
 
     /**
-     * Objects for work with shop.
+     * Objects for right shop working.
      */
     private Shop shop;
     private ShopManager shopManager;
 
+    /**
+     * Adapter for product list in a shop.
+     */
     private RecyclerViewAdapter recyclerViewAdapter;
 
     @Override
@@ -44,26 +46,10 @@ public class MainActivity extends AppCompatActivity {
     protected void onPause() {
         super.onPause();
 
-        //offing saleAsyncTask if activity on paused
-        if (shopManager.getSaleAsyncTask() != null) {
-            if (shopManager.getSaleAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
-                shopManager.getSaleAsyncTask().cancel(true);
-            }
-        }
-
-        //offing createQueueAsyncTask if activity on paused
-        if (shopManager.getCreateQueueAsyncTask() != null) {
-            if (shopManager.getCreateQueueAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
-                shopManager.getCreateQueueAsyncTask().cancel(true);
-            }
-        }
-
-        //offing toServeQueueAsyncTask if activity on paused
-        if (shopManager.getToServeQueueAsyncTask() != null) {
-            if (shopManager.getToServeQueueAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
-                shopManager.getToServeQueueAsyncTask().cancel(true);
-            }
-        }
+        //cancel all async tasks if activity on pause
+        shopManager.cancelSaleAsyncTasks();
+        shopManager.cancelCreateQueueAsyncTasks();
+        shopManager.cancelToServeQueueAsyncTasks();
     }
 
     /**
@@ -112,57 +98,11 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * This method served queue which met the during of close.
+     * This method served the queue if shop is close and queue is exists.
      */
     private void toServeQueue() {
-        shopManager.setToServeQueueAsyncTask(new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                final int PRODUCT_QUEUE_SIZE = shopManager.getProductQueue().size();
-
-                for (int i = 0; i < PRODUCT_QUEUE_SIZE; i++) {
-                    if (isCancelled()) {
-                        break;
-                    }
-
-                    Product product;
-                    String name = "";
-                    int count = 0;
-
-                    if (!shopManager.getProductQueue().isEmpty()) {
-                        product = shopManager.getProductQueue().poll();
-                        name = product.getName();
-                        count = product.getCount();
-                    }
-
-                    for (int j = 0; j < shop.getProducts().size(); j++) {
-                        if (shop.getProducts().get(j).getName().equals(name)) {
-
-                            shop.getProducts().get(j)
-                                    .setCount(shop.getProducts().get(j).getCount() - count);
-                            break;
-                        }
-                    }
-
-                    publishProgress();
-
-                    try {
-                        Thread.sleep(80);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-                return null;
-            }
-
-            @Override
-            protected void onProgressUpdate(Void... values) {
-                super.onProgressUpdate(values);
-
-                updateQueueLabel();
-                recyclerViewAdapter.notifyDataSetChanged();
-            }
-        });
+        shopManager.setToServeQueueAsyncTask(new ToServeQueueAsyncTask(shop, shopManager, this
+                , queueReport, recyclerViewAdapter));
 
         if (!shopManager.getProductQueue().isEmpty()) {
             shopManager.getToServeQueueAsyncTask().execute();
@@ -170,146 +110,34 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * This method start sale in shop.
+     * This method start sale in a shop.
      */
     private void beginSale() {
-        shopManager.setSaleAsyncTask(new AsyncTask<Void, Void, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                while (true) {
-                    if (isCancelled()) {
-                        break;
-                    }
-
-                    if (shop.isOpen() && !isEmptyProducts()) {
-                        int randomProduct = (int) (Math.random() * shop.getProducts().size());
-
-                        if (shop.getProducts().get(randomProduct).getCount() > 0) {
-                            shop.getProducts().get(randomProduct).setCount(
-                                    shop.getProducts().get(randomProduct).getCount() - 1);
-                        }
-
-                        publishProgress();
-                    } else {
-                        break;
-                    }
-
-                    try {
-                        Thread.sleep(80);
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-
-                }
-                return null;
-            }
-
-            @Override
-            protected void onProgressUpdate(Void... values) {
-                super.onProgressUpdate(values);
-
-                recyclerViewAdapter.notifyDataSetChanged();
-            }
-        });
+        shopManager.setSaleAsyncTask(new SaleAsyncTask(shop, shopManager, this
+                , shopState, recyclerViewAdapter));
 
         //if saleAsyncTask is running, cancel
-        if (shopManager.getSaleAsyncTask().getStatus() == AsyncTask.Status.RUNNING) {
-            shopManager.getSaleAsyncTask().cancel(true);
-        }
+        shopManager.cancelSaleAsyncTasks();
 
         if (shopManager.isEmptyProductQueue()) {
-            makeToast("Begin sale!");
+            makeToast(getString(R.string.ma_toast_begin_sale));
             shopManager.getSaleAsyncTask().execute();
         }
     }
 
     /**
-     * This method create queueLabel with products, which will be serviced.
+     * This method create queue with sales.
      */
     private void createQueue() {
         if (shopManager.getProductQueue() == null) {
             shopManager.setProductQueue(new PriorityQueue<Product>());
         }
 
-        shopManager.setCreateQueueAsyncTask(new AsyncTask<Void, Product, Void>() {
-            @Override
-            protected Void doInBackground(Void... voids) {
-                while (true) {
-                    if (isCancelled()) {
-                        break;
-                    }
+        shopManager.setCreateQueueAsyncTask(new CreateQueueAsyncTask(shop, shopManager
+                , this, queueReport));
 
-                    if (!isEmptyProducts() && !shop.isOpen()) {
-                        int randomProduct = (int) (Math.random() * shop.getProducts().size());
-                        Product product = null;
-
-                        if (shopManager.checkProductsNumber(shop.getProducts().get(randomProduct).getName())
-                                < shop.getProducts().get(randomProduct).getCount()) {
-                            product = new Product();
-                            product.setName(shop.getProducts().get(randomProduct).getName());
-                            product.setCount(1);
-                            shopManager.getProductQueue().add(product);
-                        }
-
-                        publishProgress(product);
-
-                        try {
-                            Thread.sleep(80);
-                        } catch (InterruptedException e) {
-                            e.printStackTrace();
-                        }
-                    } else {
-                        break;
-                    }
-                }
-
-                return null;
-            }
-
-            @Override
-            protected void onProgressUpdate(Product... products) {
-                super.onProgressUpdate(products);
-
-                String textQueue = queueLabel.getText().toString();
-
-                if (products[0] != null) {
-                    queueLabel.setText(textQueue + " \"" + products[0].getName()
-                            + "" + products[0].getCount() + "\"");
-                }
-            }
-        });
-
-        makeToast("Create queue!");
+        makeToast(getString(R.string.ma_toast_create_queue));
         shopManager.getCreateQueueAsyncTask().execute();
-    }
-
-    /**
-     * This method checked whether there is a products in shop.
-     *
-     * @return - isThere
-     */
-    private boolean isEmptyProducts() {
-        boolean result = false;
-        int count = 0;
-
-        for (int i = 0; i < shop.getProducts().size(); i++) {
-            count += shop.getProducts().get(i).getCount();
-        }
-
-        if (count == 0) {
-            result = true;
-
-            shop.setOpen(false);
-        }
-
-        return result;
-    }
-
-    /**
-     * This method update queue label.
-     */
-    private void updateQueueLabel() {
-        queueLabel.setText(shopManager.deleteTextFromQueueLabel(queueLabel.getText().toString()));
     }
 
     private void makeToast(String text) {
