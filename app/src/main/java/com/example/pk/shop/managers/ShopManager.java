@@ -1,4 +1,7 @@
-package com.example.pk.shop;
+package com.example.pk.shop.managers;
+
+import com.example.pk.shop.models.ProductModel;
+import com.example.pk.shop.models.ShopModel;
 
 import java.util.ArrayList;
 import java.util.PriorityQueue;

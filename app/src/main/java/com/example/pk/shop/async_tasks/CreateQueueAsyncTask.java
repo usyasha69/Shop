@@ -1,20 +1,23 @@
-package com.example.pk.shop;
+package com.example.pk.shop.async_tasks;
 
 import android.app.Activity;
 import android.os.AsyncTask;
-import android.widget.TextView;
+
+import com.example.pk.shop.MainActivity;
+import com.example.pk.shop.managers.AsyncTaskManager;
+import com.example.pk.shop.managers.ShopManager;
+import com.example.pk.shop.models.ProductModel;
+import com.example.pk.shop.models.ShopModel;
 
 public class CreateQueueAsyncTask extends AsyncTask<Void, ProductModel, Void> {
     private ShopModel shopModel;
     private ShopManager shopManager;
     private Activity activity;
-    private TextView queueLabel;
 
-    public CreateQueueAsyncTask(ShopModel shopModel, ShopManager shopManager, Activity activity, TextView queueLabel) {
+    public CreateQueueAsyncTask(ShopModel shopModel, ShopManager shopManager, Activity activity) {
         this.shopModel = shopModel;
         this.shopManager = shopManager;
         this.activity = activity;
-        this.queueLabel = queueLabel;
     }
 
     @Override
@@ -50,7 +53,7 @@ public class CreateQueueAsyncTask extends AsyncTask<Void, ProductModel, Void> {
                 publishProgress(productModel);
 
                 try {
-                    Thread.sleep(AsyncTaskManager.TIME_DELAY_BEETWEEN_PURCHASES);
+                    Thread.sleep(AsyncTaskManager.TIME_DELAY_BETWEEN_PURCHASES);
                 } catch (InterruptedException e) {
                     e.printStackTrace();
                 }
@@ -68,11 +71,9 @@ public class CreateQueueAsyncTask extends AsyncTask<Void, ProductModel, Void> {
         super.onProgressUpdate(productModels);
 
         if (activity != null) {
-            String textQueue = queueLabel.getText().toString();
-            if (productModels[0] != null) {
-                queueLabel.setText(textQueue + " \"" + productModels[0].getName()
-                        + "" + productModels[0].getCount() + "\"");
-            }
+            MainActivity mainActivity = (MainActivity) activity;
+
+            mainActivity.addTextToQueueReport(productModels[0]);
         }
     }
 }

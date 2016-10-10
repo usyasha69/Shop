@@ -1,4 +1,4 @@
-package com.example.pk.shop;
+package com.example.pk.shop.models;
 
 import android.support.annotation.NonNull;
 

@@ -1,23 +1,22 @@
-package com.example.pk.shop;
+package com.example.pk.shop.async_tasks;
 
 import android.app.Activity;
 import android.os.AsyncTask;
-import android.widget.TextView;
+
+import com.example.pk.shop.MainActivity;
+import com.example.pk.shop.managers.AsyncTaskManager;
+import com.example.pk.shop.managers.ShopManager;
+import com.example.pk.shop.models.ShopModel;
 
 public class SaleAsyncTask extends AsyncTask<Void, Void, Void> {
     private ShopModel shopModel;
     private ShopManager shopManager;
     private Activity activity;
-    private TextView shopState;
-    private RecyclerViewAdapter recyclerViewAdapter;
 
-    public SaleAsyncTask(ShopModel shopModel, ShopManager shopManager, Activity activity
-            , TextView shopState, RecyclerViewAdapter recyclerViewAdapter) {
+    public SaleAsyncTask(ShopModel shopModel, ShopManager shopManager, Activity activity) {
         this.shopModel = shopModel;
         this.shopManager = shopManager;
         this.activity = activity;
-        this.shopState = shopState;
-        this.recyclerViewAdapter = recyclerViewAdapter;
     }
 
     @Override
@@ -46,7 +45,7 @@ public class SaleAsyncTask extends AsyncTask<Void, Void, Void> {
 
             //set time delay
             try {
-                Thread.sleep(AsyncTaskManager.TIME_DELAY_BEETWEEN_PURCHASES);
+                Thread.sleep(AsyncTaskManager.TIME_DELAY_BETWEEN_PURCHASES);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
@@ -60,11 +59,13 @@ public class SaleAsyncTask extends AsyncTask<Void, Void, Void> {
         super.onProgressUpdate(values);
 
         if (activity != null) {
+            MainActivity mainActivity = (MainActivity) activity;
+
             if (!shopModel.isOpen()) {
-                shopState.setText(R.string.ma_shop_state_close);
+                mainActivity.setShopStateText();
             }
 
-            recyclerViewAdapter.notifyDataSetChanged();
+            mainActivity.updateAdapter();
         }
     }
 }

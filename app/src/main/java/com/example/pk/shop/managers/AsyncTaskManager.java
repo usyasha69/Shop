@@ -1,12 +1,14 @@
-package com.example.pk.shop;
+package com.example.pk.shop.managers;
 
 import android.os.AsyncTask;
 
+import com.example.pk.shop.models.ProductModel;
+
 public class AsyncTaskManager {
     /**
-     * Time of delay beetween purchases.
+     * Time of delay between purchases.
      */
-    public static final int TIME_DELAY_BEETWEEN_PURCHASES = 80;
+    public static final int TIME_DELAY_BETWEEN_PURCHASES = 80;
 
     /**
      * Async task for working shop in background.
@@ -73,5 +75,11 @@ public class AsyncTaskManager {
                 toServeQueueAsyncTask.cancel(true);
             }
         }
+    }
+
+    public void cancellAllAsyncTasks() {
+        cancelToServeQueueAsyncTasks();
+        cancelCreateQueueAsyncTasks();
+        cancelSaleAsyncTasks();
     }
 }

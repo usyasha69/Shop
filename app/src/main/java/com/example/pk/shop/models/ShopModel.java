@@ -1,4 +1,4 @@
-package com.example.pk.shop;
+package com.example.pk.shop.models;
 
 import java.util.ArrayList;
 
