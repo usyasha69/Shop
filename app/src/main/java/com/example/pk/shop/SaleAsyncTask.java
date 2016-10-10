@@ -5,15 +5,15 @@ import android.os.AsyncTask;
 import android.widget.TextView;
 
 public class SaleAsyncTask extends AsyncTask<Void, Void, Void> {
-    private Shop shop;
+    private ShopModel shopModel;
     private ShopManager shopManager;
     private Activity activity;
     private TextView shopState;
     private RecyclerViewAdapter recyclerViewAdapter;
 
-    public SaleAsyncTask(Shop shop, ShopManager shopManager, Activity activity
+    public SaleAsyncTask(ShopModel shopModel, ShopManager shopManager, Activity activity
             , TextView shopState, RecyclerViewAdapter recyclerViewAdapter) {
-        this.shop = shop;
+        this.shopModel = shopModel;
         this.shopManager = shopManager;
         this.activity = activity;
         this.shopState = shopState;
@@ -28,14 +28,14 @@ public class SaleAsyncTask extends AsyncTask<Void, Void, Void> {
                 break;
             }
 
-            if (shop.isOpen() && !shopManager.isEmptyProducts(shop)) {
-                int randomProduct = (int) (Math.random() * shop.getProducts().size());
+            if (shopModel.isOpen() && !shopManager.isEmptyProducts(shopModel)) {
+                int randomProduct = (int) (Math.random() * shopModel.getProductModels().size());
 
-                int productNumber = shop.getProducts().get(randomProduct).getCount();
+                int productNumber = shopModel.getProductModels().get(randomProduct).getCount();
                 final int NUMBER_OF_SALE = 1;
 
                 if (productNumber > 0) {
-                    shop.getProducts().get(randomProduct).setCount(productNumber - NUMBER_OF_SALE);
+                    shopModel.getProductModels().get(randomProduct).setCount(productNumber - NUMBER_OF_SALE);
                 }
 
                 //update recycler view in main activity
@@ -60,7 +60,7 @@ public class SaleAsyncTask extends AsyncTask<Void, Void, Void> {
         super.onProgressUpdate(values);
 
         if (activity != null) {
-            if (!shop.isOpen()) {
+            if (!shopModel.isOpen()) {
                 shopState.setText(R.string.ma_shop_state_close);
             }
 

@@ -2,15 +2,15 @@ package com.example.pk.shop;
 
 import android.support.annotation.NonNull;
 
-public class Product implements Comparable<Product> {
+public class ProductModel implements Comparable<ProductModel> {
     private String name;
     private int count;
 
-    public Product() {
+    public ProductModel() {
 
     }
 
-    public Product(String name, int count) {
+    public ProductModel(String name, int count) {
         this.name = name;
         this.count = count;
     }
@@ -36,10 +36,10 @@ public class Product implements Comparable<Product> {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
 
-        Product product = (Product) o;
+        ProductModel productModel = (ProductModel) o;
 
-        if (!name.equals(product.name)) return false;
-        return count == product.count;
+        if (!name.equals(productModel.name)) return false;
+        return count == productModel.count;
 
     }
 
@@ -52,18 +52,18 @@ public class Product implements Comparable<Product> {
 
     @Override
     public String toString() {
-        return "Product{" +
+        return "ProductModel{" +
                 "name='" + name + '\'' +
                 ", count='" + count + '\'' +
                 '}';
     }
 
     @Override
-    public int compareTo(@NonNull Product product) {
-        int result = product.getName().compareTo(name);
+    public int compareTo(@NonNull ProductModel productModel) {
+        int result = productModel.getName().compareTo(name);
 
         if (result == 0) {
-            result = product.getCount() - count;
+            result = productModel.getCount() - count;
         }
         return result;
     }

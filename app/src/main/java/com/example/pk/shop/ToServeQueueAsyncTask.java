@@ -5,15 +5,15 @@ import android.os.AsyncTask;
 import android.widget.TextView;
 
 public class ToServeQueueAsyncTask extends AsyncTask<Void, Void, Void> {
-    private Shop shop;
+    private ShopModel shopModel;
     private ShopManager shopManager;
     private Activity activity;
     private TextView queueReport;
     private RecyclerViewAdapter recyclerViewAdapter;
 
-    public ToServeQueueAsyncTask(Shop shop, ShopManager shopManager, Activity activity, TextView queueReport
+    public ToServeQueueAsyncTask(ShopModel shopModel, ShopManager shopManager, Activity activity, TextView queueReport
             , RecyclerViewAdapter recyclerViewAdapter) {
-        this.shop = shop;
+        this.shopModel = shopModel;
         this.shopManager = shopManager;
         this.activity = activity;
         this.queueReport = queueReport;
@@ -22,7 +22,7 @@ public class ToServeQueueAsyncTask extends AsyncTask<Void, Void, Void> {
 
     @Override
     protected Void doInBackground(Void... voids) {
-        final int PRODUCT_QUEUE_SIZE = shopManager.getProductQueue().size();
+        final int PRODUCT_QUEUE_SIZE = shopManager.getProductModelQueue().size();
 
         for (int i = 0; i < PRODUCT_QUEUE_SIZE; i++) {
             //if async task is cancelled, break of cycle
@@ -30,20 +30,20 @@ public class ToServeQueueAsyncTask extends AsyncTask<Void, Void, Void> {
                 break;
             }
 
-            Product product;
+            ProductModel productModel;
             String name = "";
             int count = 0;
 
-            if (!shopManager.getProductQueue().isEmpty()) {
-                product = shopManager.getProductQueue().poll();
-                name = product.getName();
-                count = product.getCount();
+            if (!shopManager.getProductModelQueue().isEmpty()) {
+                productModel = shopManager.getProductModelQueue().poll();
+                name = productModel.getName();
+                count = productModel.getCount();
             }
 
-            //set number of product in shop
-            for (int j = 0; j < shop.getProducts().size(); j++) {
-                if (shop.getProducts().get(j).getName().equals(name)) {
-                    shop.getProducts().get(j).setCount(shop.getProducts().get(j).getCount() - count);
+            //set number of productModel in shopModel
+            for (int j = 0; j < shopModel.getProductModels().size(); j++) {
+                if (shopModel.getProductModels().get(j).getName().equals(name)) {
+                    shopModel.getProductModels().get(j).setCount(shopModel.getProductModels().get(j).getCount() - count);
                     break;
                 }
             }

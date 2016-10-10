@@ -15,11 +15,11 @@ import butterknife.ButterKnife;
 
 public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapter.ViewHolder> {
     private Context context;
-    private ArrayList<Product> products;
+    private ArrayList<ProductModel> productModels;
 
-    public RecyclerViewAdapter(Context context, ArrayList<Product> products) {
+    public RecyclerViewAdapter(Context context, ArrayList<ProductModel> productModels) {
         this.context = context;
-        this.products = products;
+        this.productModels = productModels;
     }
 
     @Override
@@ -34,13 +34,13 @@ public class RecyclerViewAdapter extends RecyclerView.Adapter<RecyclerViewAdapte
 
     @Override
     public void onBindViewHolder(RecyclerViewAdapter.ViewHolder holder, int position) {
-        holder.name.setText(products.get(position).getName());
-        holder.number.setText(String.valueOf(products.get(position).getCount()));
+        holder.name.setText(productModels.get(position).getName());
+        holder.number.setText(String.valueOf(productModels.get(position).getCount()));
     }
 
     @Override
     public int getItemCount() {
-        return products.size();
+        return productModels.size();
     }
 
     public static class ViewHolder extends RecyclerView.ViewHolder {

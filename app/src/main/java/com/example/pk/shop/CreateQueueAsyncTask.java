@@ -4,14 +4,14 @@ import android.app.Activity;
 import android.os.AsyncTask;
 import android.widget.TextView;
 
-public class CreateQueueAsyncTask extends AsyncTask<Void, Product, Void> {
-    private Shop shop;
+public class CreateQueueAsyncTask extends AsyncTask<Void, ProductModel, Void> {
+    private ShopModel shopModel;
     private ShopManager shopManager;
     private Activity activity;
     private TextView queueLabel;
 
-    public CreateQueueAsyncTask(Shop shop, ShopManager shopManager, Activity activity, TextView queueLabel) {
-        this.shop = shop;
+    public CreateQueueAsyncTask(ShopModel shopModel, ShopManager shopManager, Activity activity, TextView queueLabel) {
+        this.shopModel = shopModel;
         this.shopManager = shopManager;
         this.activity = activity;
         this.queueLabel = queueLabel;
@@ -25,29 +25,29 @@ public class CreateQueueAsyncTask extends AsyncTask<Void, Product, Void> {
                 break;
             }
 
-            //create queue in close shop
-            if (!shopManager.isEmptyProducts(shop) && !shop.isOpen()) {
-                int randomProduct = (int) (Math.random() * shop.getProducts().size());
-                Product product = null;
+            //create queue in close shopModel
+            if (!shopManager.isEmptyProducts(shopModel) && !shopModel.isOpen()) {
+                int randomProduct = (int) (Math.random() * shopModel.getProductModels().size());
+                ProductModel productModel = null;
 
-                //products number in shop and queue
+                //products number in shopModel and queue
                 int productsNumberInQueue =
-                        shopManager.checkProductsNumber(shop.getProducts().get(randomProduct).getName());
-                int productsNumberInShop = shop.getProducts().get(randomProduct).getCount();
+                        shopManager.checkProductsNumber(shopModel.getProductModels().get(randomProduct).getName());
+                int productsNumberInShop = shopModel.getProductModels().get(randomProduct).getCount();
 
                 if (productsNumberInQueue < productsNumberInShop) {
-                    //number of sale product
+                    //number of sale productModel
                     final int PRODUCT_NUMBER = 1;
 
-                    product = new Product();
-                    product.setName(shop.getProducts().get(randomProduct).getName());
-                    product.setCount(PRODUCT_NUMBER);
+                    productModel = new ProductModel();
+                    productModel.setName(shopModel.getProductModels().get(randomProduct).getName());
+                    productModel.setCount(PRODUCT_NUMBER);
 
-                    shopManager.getProductQueue().add(product);
+                    shopManager.getProductModelQueue().add(productModel);
                 }
 
                 //update queue report text view in main activity
-                publishProgress(product);
+                publishProgress(productModel);
 
                 try {
                     Thread.sleep(AsyncTaskManager.TIME_DELAY_BEETWEEN_PURCHASES);
@@ -64,14 +64,14 @@ public class CreateQueueAsyncTask extends AsyncTask<Void, Product, Void> {
     }
 
     @Override
-    protected void onProgressUpdate(Product... products) {
-        super.onProgressUpdate(products);
+    protected void onProgressUpdate(ProductModel... productModels) {
+        super.onProgressUpdate(productModels);
 
         if (activity != null) {
             String textQueue = queueLabel.getText().toString();
-            if (products[0] != null) {
-                queueLabel.setText(textQueue + " \"" + products[0].getName()
-                        + "" + products[0].getCount() + "\"");
+            if (productModels[0] != null) {
+                queueLabel.setText(textQueue + " \"" + productModels[0].getName()
+                        + "" + productModels[0].getCount() + "\"");
             }
         }
     }

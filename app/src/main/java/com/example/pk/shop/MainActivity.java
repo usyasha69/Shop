@@ -1,6 +1,5 @@
 package com.example.pk.shop;
 
-import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -23,14 +22,14 @@ public class MainActivity extends AppCompatActivity {
     TextView queueReport;
 
     /**
-     * Objects for right shop working.
+     * Objects for right shopModel working.
      */
-    private Shop shop;
+    private ShopModel shopModel;
     private ShopManager shopManager;
     private AsyncTaskManager asyncTaskManager;
 
     /**
-     * Adapter for product list in a shop.
+     * Adapter for product list in a shopModel.
      */
     private RecyclerViewAdapter recyclerViewAdapter;
 
@@ -56,21 +55,21 @@ public class MainActivity extends AppCompatActivity {
     }
 
     /**
-     * This method create and filling shop.
+     * This method create and filling shopModel.
      */
     public void openShop() {
-        shop = shopManager.createAndFillingShop();
+        shopModel = shopManager.createAndFillingShop();
 
         shopState.setText(R.string.ma_shop_state_open);
 
-        recyclerViewAdapter = new RecyclerViewAdapter(this, shop.getProducts());
+        recyclerViewAdapter = new RecyclerViewAdapter(this, shopModel.getProductModels());
         productList.setLayoutManager(new LinearLayoutManager(this));
         productList.setAdapter(recyclerViewAdapter);
     }
 
     @OnClick(R.id.ma_open)
     public void onClickOpenShop() {
-        shop.setOpen(true);
+        shopModel.setOpen(true);
         shopState.setText(R.string.ma_shop_state_open);
 
         if (shopManager.isEmptyProductQueue()) {
@@ -83,40 +82,40 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick(R.id.ma_close)
     public void onClickCloseShop() {
-        shop.setOpen(false);
+        shopModel.setOpen(false);
         shopState.setText(R.string.ma_shop_state_close);
 
         makeToast(getString(R.string.toast_shop_is_close));
 
-        if (!shop.isOpen()) {
+        if (!shopModel.isOpen()) {
             createQueue();
         }
     }
 
     @OnClick(R.id.ma_begin_sale)
     public void onclickBeginSale() {
-        if (shop.isOpen()) {
+        if (shopModel.isOpen()) {
             beginSale();
         }
     }
 
     /**
-     * This method served the queue if shop is close and queue is exists.
+     * This method served the queue if shopModel is close and queue is exists.
      */
     private void toServeQueue() {
-        asyncTaskManager.setToServeQueueAsyncTask(new ToServeQueueAsyncTask(shop, shopManager, this
+        asyncTaskManager.setToServeQueueAsyncTask(new ToServeQueueAsyncTask(shopModel, shopManager, this
                 , queueReport, recyclerViewAdapter));
 
-        if (!shopManager.getProductQueue().isEmpty()) {
+        if (!shopManager.getProductModelQueue().isEmpty()) {
             asyncTaskManager.getToServeQueueAsyncTask().execute();
         }
     }
 
     /**
-     * This method start sale in a shop.
+     * This method start sale in a shopModel.
      */
     private void beginSale() {
-        asyncTaskManager.setSaleAsyncTask(new SaleAsyncTask(shop, shopManager, this
+        asyncTaskManager.setSaleAsyncTask(new SaleAsyncTask(shopModel, shopManager, this
                 , shopState, recyclerViewAdapter));
 
         //if saleAsyncTask is running, cancel
@@ -132,14 +131,14 @@ public class MainActivity extends AppCompatActivity {
      * This method create queue with sales.
      */
     private void createQueue() {
-        if (shopManager.getProductQueue() == null) {
-            shopManager.setProductQueue(new PriorityQueue<Product>());
+        if (shopManager.getProductModelQueue() == null) {
+            shopManager.setProductModelQueue(new PriorityQueue<ProductModel>());
         }
 
         //cancel async task which the serve queue
         asyncTaskManager.cancelToServeQueueAsyncTasks();
 
-        asyncTaskManager.setCreateQueueAsyncTask(new CreateQueueAsyncTask(shop, shopManager
+        asyncTaskManager.setCreateQueueAsyncTask(new CreateQueueAsyncTask(shopModel, shopManager
                 , this, queueReport));
 
         makeToast(getString(R.string.toast_create_queue));

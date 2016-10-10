@@ -5,16 +5,16 @@ import java.util.PriorityQueue;
 
 public class ShopManager {
     /**
-     * Product queue, is formed if shop is close.
+     * ProductModel queue, is formed if shop is close.
      */
-    private PriorityQueue<Product> productQueue;
+    private PriorityQueue<ProductModel> productModelQueue;
 
-    public PriorityQueue<Product> getProductQueue() {
-        return productQueue;
+    public PriorityQueue<ProductModel> getProductModelQueue() {
+        return productModelQueue;
     }
 
-    public void setProductQueue(PriorityQueue<Product> productQueue) {
-        this.productQueue = productQueue;
+    public void setProductModelQueue(PriorityQueue<ProductModel> productModelQueue) {
+        this.productModelQueue = productModelQueue;
     }
 
     /**
@@ -26,8 +26,8 @@ public class ShopManager {
     public int checkProductsNumber(String name) {
         int count = 0;
 
-        for (Product product : productQueue) {
-            if (product.getName().equals(name)) {
+        for (ProductModel productModel : productModelQueue) {
+            if (productModel.getName().equals(name)) {
                 count++;
             }
         }
@@ -43,8 +43,8 @@ public class ShopManager {
     public boolean isEmptyProductQueue() {
         boolean result = true;
 
-        if (productQueue != null) {
-            if (!productQueue.isEmpty()) {
+        if (productModelQueue != null) {
+            if (!productModelQueue.isEmpty()) {
                 result = false;
             }
         }
@@ -74,39 +74,39 @@ public class ShopManager {
     /**
      * This method create and filling shop.
      */
-    public Shop createAndFillingShop() {
-        Shop shop = new Shop();
+    public ShopModel createAndFillingShop() {
+        ShopModel shopModel = new ShopModel();
 
-        ArrayList<Product> products = new ArrayList<>();
-        products.add(new Product("Chicken", 20));
-        products.add(new Product("Meat", 24));
-        products.add(new Product("Potatoes", 21));
-        products.add(new Product("Apple", 27));
-        products.add(new Product("Banana", 23));
+        ArrayList<ProductModel> productModels = new ArrayList<>();
+        productModels.add(new ProductModel("Chicken", 20));
+        productModels.add(new ProductModel("Meat", 24));
+        productModels.add(new ProductModel("Potatoes", 21));
+        productModels.add(new ProductModel("Apple", 27));
+        productModels.add(new ProductModel("Banana", 23));
 
-        shop.setProducts(products);
-        shop.setOpen(true);
+        shopModel.setProductModels(productModels);
+        shopModel.setOpen(true);
 
-        return shop;
+        return shopModel;
     }
 
     /**
-     * This method checked whether there is a products in shop.
+     * This method checked whether there is a products in shopModel.
      *
      * @return - is empty
      */
-    public boolean isEmptyProducts(Shop shop) {
+    public boolean isEmptyProducts(ShopModel shopModel) {
         boolean result = false;
         int count = 0;
 
-        for (int i = 0; i < shop.getProducts().size(); i++) {
-            count += shop.getProducts().get(i).getCount();
+        for (int i = 0; i < shopModel.getProductModels().size(); i++) {
+            count += shopModel.getProductModels().get(i).getCount();
         }
 
         if (count == 0) {
             result = true;
 
-            shop.setOpen(false);
+            shopModel.setOpen(false);
         }
 
         return result;

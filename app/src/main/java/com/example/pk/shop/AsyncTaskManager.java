@@ -12,7 +12,7 @@ public class AsyncTaskManager {
      * Async task for working shop in background.
      */
     private AsyncTask<Void, Void, Void> saleAsyncTask;
-    private AsyncTask<Void, Product, Void> createQueueAsyncTask;
+    private AsyncTask<Void, ProductModel, Void> createQueueAsyncTask;
     private AsyncTask<Void, Void, Void> toServeQueueAsyncTask;
 
     public AsyncTask<Void, Void, Void> getSaleAsyncTask() {
@@ -23,11 +23,11 @@ public class AsyncTaskManager {
         this.saleAsyncTask = saleAsyncTask;
     }
 
-    public AsyncTask<Void, Product, Void> getCreateQueueAsyncTask() {
+    public AsyncTask<Void, ProductModel, Void> getCreateQueueAsyncTask() {
         return createQueueAsyncTask;
     }
 
-    public void setCreateQueueAsyncTask(AsyncTask<Void, Product, Void> createQueueAsyncTask) {
+    public void setCreateQueueAsyncTask(AsyncTask<Void, ProductModel, Void> createQueueAsyncTask) {
         this.createQueueAsyncTask = createQueueAsyncTask;
     }
 
