@@ -1,5 +1,6 @@
 package com.example.pk.shop;
 
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
@@ -26,6 +27,7 @@ public class MainActivity extends AppCompatActivity {
      */
     private Shop shop;
     private ShopManager shopManager;
+    private AsyncTaskManager asyncTaskManager;
 
     /**
      * Adapter for product list in a shop.
@@ -39,7 +41,8 @@ public class MainActivity extends AppCompatActivity {
         ButterKnife.bind(this);
 
         shopManager = new ShopManager();
-        createAndFillingShop();
+        asyncTaskManager = new AsyncTaskManager();
+        openShop();
     }
 
     @Override
@@ -47,15 +50,15 @@ public class MainActivity extends AppCompatActivity {
         super.onPause();
 
         //cancel all async tasks if activity on pause
-        shopManager.cancelSaleAsyncTasks();
-        shopManager.cancelCreateQueueAsyncTasks();
-        shopManager.cancelToServeQueueAsyncTasks();
+        asyncTaskManager.cancelSaleAsyncTasks();
+        asyncTaskManager.cancelCreateQueueAsyncTasks();
+        asyncTaskManager.cancelToServeQueueAsyncTasks();
     }
 
     /**
      * This method create and filling shop.
      */
-    public void createAndFillingShop() {
+    public void openShop() {
         shop = shopManager.createAndFillingShop();
 
         shopState.setText(R.string.ma_shop_state_open);
@@ -101,11 +104,11 @@ public class MainActivity extends AppCompatActivity {
      * This method served the queue if shop is close and queue is exists.
      */
     private void toServeQueue() {
-        shopManager.setToServeQueueAsyncTask(new ToServeQueueAsyncTask(shop, shopManager, this
+        asyncTaskManager.setToServeQueueAsyncTask(new ToServeQueueAsyncTask(shop, shopManager, this
                 , queueReport, recyclerViewAdapter));
 
         if (!shopManager.getProductQueue().isEmpty()) {
-            shopManager.getToServeQueueAsyncTask().execute();
+            asyncTaskManager.getToServeQueueAsyncTask().execute();
         }
     }
 
@@ -113,15 +116,15 @@ public class MainActivity extends AppCompatActivity {
      * This method start sale in a shop.
      */
     private void beginSale() {
-        shopManager.setSaleAsyncTask(new SaleAsyncTask(shop, shopManager, this
+        asyncTaskManager.setSaleAsyncTask(new SaleAsyncTask(shop, shopManager, this
                 , shopState, recyclerViewAdapter));
 
         //if saleAsyncTask is running, cancel
-        shopManager.cancelSaleAsyncTasks();
+        asyncTaskManager.cancelSaleAsyncTasks();
 
         if (shopManager.isEmptyProductQueue()) {
-            makeToast(getString(R.string.ma_toast_begin_sale));
-            shopManager.getSaleAsyncTask().execute();
+            makeToast(getString(R.string.toast_begin_sale));
+            asyncTaskManager.getSaleAsyncTask().execute();
         }
     }
 
@@ -133,11 +136,14 @@ public class MainActivity extends AppCompatActivity {
             shopManager.setProductQueue(new PriorityQueue<Product>());
         }
 
-        shopManager.setCreateQueueAsyncTask(new CreateQueueAsyncTask(shop, shopManager
+        //cancel async task which the serve queue
+        asyncTaskManager.cancelToServeQueueAsyncTasks();
+
+        asyncTaskManager.setCreateQueueAsyncTask(new CreateQueueAsyncTask(shop, shopManager
                 , this, queueReport));
 
-        makeToast(getString(R.string.ma_toast_create_queue));
-        shopManager.getCreateQueueAsyncTask().execute();
+        makeToast(getString(R.string.toast_create_queue));
+        asyncTaskManager.getCreateQueueAsyncTask().execute();
     }
 
     private void makeToast(String text) {

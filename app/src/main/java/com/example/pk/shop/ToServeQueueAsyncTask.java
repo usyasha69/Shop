@@ -8,15 +8,15 @@ public class ToServeQueueAsyncTask extends AsyncTask<Void, Void, Void> {
     private Shop shop;
     private ShopManager shopManager;
     private Activity activity;
-    private TextView queueLabel;
+    private TextView queueReport;
     private RecyclerViewAdapter recyclerViewAdapter;
 
-    public ToServeQueueAsyncTask(Shop shop, ShopManager shopManager, Activity activity, TextView queueLabel
+    public ToServeQueueAsyncTask(Shop shop, ShopManager shopManager, Activity activity, TextView queueReport
             , RecyclerViewAdapter recyclerViewAdapter) {
         this.shop = shop;
         this.shopManager = shopManager;
         this.activity = activity;
-        this.queueLabel = queueLabel;
+        this.queueReport = queueReport;
         this.recyclerViewAdapter = recyclerViewAdapter;
     }
 
@@ -25,6 +25,7 @@ public class ToServeQueueAsyncTask extends AsyncTask<Void, Void, Void> {
         final int PRODUCT_QUEUE_SIZE = shopManager.getProductQueue().size();
 
         for (int i = 0; i < PRODUCT_QUEUE_SIZE; i++) {
+            //if async task is cancelled, break of cycle
             if (isCancelled()) {
                 break;
             }
@@ -39,23 +40,24 @@ public class ToServeQueueAsyncTask extends AsyncTask<Void, Void, Void> {
                 count = product.getCount();
             }
 
+            //set number of product in shop
             for (int j = 0; j < shop.getProducts().size(); j++) {
                 if (shop.getProducts().get(j).getName().equals(name)) {
-
-                    shop.getProducts().get(j)
-                            .setCount(shop.getProducts().get(j).getCount() - count);
+                    shop.getProducts().get(j).setCount(shop.getProducts().get(j).getCount() - count);
                     break;
                 }
             }
 
+            //update queue report in main activity
             publishProgress();
 
             try {
-                Thread.sleep(80);
+                Thread.sleep(AsyncTaskManager.TIME_DELAY_BEETWEEN_PURCHASES);
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
         }
+
         return null;
     }
 
@@ -63,17 +65,18 @@ public class ToServeQueueAsyncTask extends AsyncTask<Void, Void, Void> {
     protected void onProgressUpdate(Void... values) {
         super.onProgressUpdate(values);
 
-        updateQueueLabel();
-        recyclerViewAdapter.notifyDataSetChanged();
+        if (activity != null) {
+            updateQueueReport();
+            recyclerViewAdapter.notifyDataSetChanged();
+        }
     }
 
 
     /**
-     * This method update queue label.
+     * This method update queue report.
      */
-    private void updateQueueLabel() {
-        if (activity != null) {
-            queueLabel.setText(shopManager.deleteTextFromQueueLabel(queueLabel.getText().toString()));
-        }
+    private void updateQueueReport() {
+        queueReport.setText(shopManager.deleteTextFromQueueLabel(queueReport.getText().toString()));
+
     }
 }
